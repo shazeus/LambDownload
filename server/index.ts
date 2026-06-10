@@ -33,6 +33,8 @@ type WorkerProgress = {
 type AppSettings = {
   autoUpdate: boolean
   releaseRepo: string
+  pythonCommand?: string | null
+  pythonArgs?: string[]
 }
 
 const __filename = fileURLToPath(import.meta.url)
@@ -44,11 +46,12 @@ const packagePath = path.join(projectRoot, 'package.json')
 const downloadRoot = process.env.LAMBDOWNLOAD_MEDIA_DIR ?? path.join(homedir(), 'Movies', 'LambDownload')
 const configRoot = path.join(homedir(), '.lambdownload')
 const settingsPath = path.join(configRoot, 'config.json')
-const pythonBin = process.env.LAMBDOWNLOAD_PYTHON ?? 'python3'
 const port = Number(process.env.LAMBDOWNLOAD_PORT ?? 4317)
 const defaultSettings: AppSettings = {
   autoUpdate: true,
   releaseRepo: 'shazeus/LambDownload',
+  pythonCommand: null,
+  pythonArgs: [],
 }
 
 mkdirSync(downloadRoot, { recursive: true })
@@ -76,6 +79,8 @@ const importBodySchema = z.object({
 const settingsSchema = z.object({
   autoUpdate: z.boolean().optional(),
   releaseRepo: z.string().min(3).optional(),
+  pythonCommand: z.string().nullable().optional(),
+  pythonArgs: z.array(z.string()).optional(),
 })
 
 function currentVersion(): string {
@@ -128,9 +133,30 @@ function isNewerVersion(latest: string, current: string): boolean {
   return false
 }
 
+function pythonRuntime(): { command: string; args: string[] } {
+  if (process.env.LAMBDOWNLOAD_PYTHON) {
+    return { command: process.env.LAMBDOWNLOAD_PYTHON, args: [] }
+  }
+
+  const settings = readSettings()
+  if (settings.pythonCommand) {
+    return {
+      command: settings.pythonCommand,
+      args: settings.pythonArgs ?? [],
+    }
+  }
+
+  if (process.platform === 'win32') {
+    return { command: 'py', args: ['-3'] }
+  }
+
+  return { command: 'python3', args: [] }
+}
+
 function runWorker(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn(pythonBin, [workerPath, ...args], {
+    const python = pythonRuntime()
+    const child = spawn(python.command, [...python.args, workerPath, ...args], {
       cwd: projectRoot,
       env: { ...process.env, PYTHONUNBUFFERED: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -303,9 +329,11 @@ app.post('/api/jobs', (request, response) => {
   jobs.set(id, job)
   response.status(202).json({ job })
 
+  const python = pythonRuntime()
   const child = spawn(
-    pythonBin,
+    python.command,
     [
+      ...python.args,
       workerPath,
       'download',
       parsed.data.url,

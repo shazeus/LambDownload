@@ -39,5 +39,5 @@ jobs:
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: release/lambdownload-release.zip
+          files: release/*.zip
           generate_release_notes: true

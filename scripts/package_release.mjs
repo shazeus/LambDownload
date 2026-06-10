@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process'
-import { mkdir, rm } from 'node:fs/promises'
+import { mkdir, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 const releaseRoot = path.join(projectRoot, 'release')
-const archivePath = path.join(releaseRoot, 'lambdownload-release.zip')
+const packageJson = JSON.parse(await readFile(path.join(projectRoot, 'package.json'), 'utf8'))
+const version = packageJson.version
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
@@ -30,9 +31,8 @@ function run(command, args) {
 
 await rm(releaseRoot, { recursive: true, force: true })
 await mkdir(releaseRoot, { recursive: true })
-await run('zip', [
-  '-r',
-  archivePath,
+
+const commonFiles = [
   'adobe',
   'dist',
   'installers',
@@ -45,8 +45,14 @@ await run('zip', [
   'requirements.txt',
   'README.md',
   'LICENSE',
-  '-x',
-  'node_modules/*',
-  '.git/*',
-])
-console.log(`Created ${archivePath}`)
+]
+
+async function createArchive(name) {
+  const archivePath = path.join(releaseRoot, name)
+  await run('zip', ['-r', archivePath, ...commonFiles, '-x', 'node_modules/*', '.git/*', 'release/*'])
+  console.log(`Created ${archivePath}`)
+}
+
+await createArchive('lambdownload-release.zip')
+await createArchive(`lambdownload-v${version}-macos-linux.zip`)
+await createArchive(`lambdownload-v${version}-windows.zip`)

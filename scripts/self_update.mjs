@@ -30,6 +30,44 @@ function run(command, args) {
   })
 }
 
+async function capture(command, args) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd: projectRoot,
+      shell: process.platform === 'win32',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+    let text = ''
+    child.stdout.on('data', (chunk) => {
+      text += chunk.toString()
+    })
+    child.on('error', () => resolve(''))
+    child.on('close', (code) => resolve(code === 0 ? text.trim() : ''))
+  })
+}
+
+async function findPython() {
+  const candidates = process.platform === 'win32'
+    ? [
+        { command: 'py', args: ['-3'] },
+        { command: 'python', args: [] },
+        { command: 'python3', args: [] },
+      ]
+    : [
+        { command: 'python3', args: [] },
+        { command: 'python', args: [] },
+      ]
+
+  for (const candidate of candidates) {
+    const version = await capture(candidate.command, [...candidate.args, '--version'])
+    if (version) {
+      return candidate
+    }
+  }
+
+  throw new Error('Python 3 is required for update install.')
+}
+
 async function download(url, destination) {
   const response = await fetch(url, {
     headers: {
@@ -84,8 +122,9 @@ async function main() {
     },
   })
 
+  const python = await findPython()
   await run('npm', ['install'])
-  await run('python3', ['-m', 'pip', 'install', '-r', 'requirements.txt'])
+  await run(python.command, [...python.args, '-m', 'pip', 'install', '--upgrade', '-r', 'requirements.txt'])
   await run('npm', ['run', 'build'])
   await rm(updateRoot, { recursive: true, force: true })
 }
