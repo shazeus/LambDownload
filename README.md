@@ -19,6 +19,10 @@ LambDownload is a local Adobe extension workflow. The panel runs inside Premiere
 - **Stream Merging** - Handles high-res video/audio stream merging through ffmpeg.
 - **Auto Update** - Checks GitHub Releases and can be turned off from the panel.
 
+## Important
+
+Please read the LICENSE. This add-on is free and will remain free indefinitely. If you purchased it from someone, you may have been scammed, and I am not responsible for that.
+
 ## Install
 
 Simple setup:
