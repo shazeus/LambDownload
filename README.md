@@ -115,6 +115,8 @@ Inside the panel:
 3. Download the media through the Python worker.
 4. Import the finished file into the project bin or active timeline.
 
+<img width="1080" height="1186" alt="0610(2) (1)" src="https://github.com/user-attachments/assets/f43e3411-06df-4fe5-b082-33b329379b55" />
+
 ## Auto Update
 
 LambDownload checks `shazeus/LambDownload` GitHub Releases through the local service.
