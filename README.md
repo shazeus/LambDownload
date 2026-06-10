@@ -117,6 +117,8 @@ Inside the panel:
 
 <img width="540" height="593" alt="0610(2) (1)" src="https://github.com/user-attachments/assets/f43e3411-06df-4fe5-b082-33b329379b55" />
 
+<img width="540" height="593" alt="0610(3)" src="https://github.com/user-attachments/assets/5aec6b49-8810-4e14-ad4f-fe910b468b0c" />
+
 ## Auto Update
 
 LambDownload checks `shazeus/LambDownload` GitHub Releases through the local service.
