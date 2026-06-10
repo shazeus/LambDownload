@@ -1,5 +1,7 @@
 # LambDownload
 
+<img width="1640" height="664" alt="Yeni Proje (1)" src="https://github.com/user-attachments/assets/dafc6eb4-80f0-484c-80aa-1f009b29f5aa" />
+
 Adobe Premiere Pro and After Effects panel for searching, downloading, and importing authorized YouTube media.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178c6?style=flat-square)
