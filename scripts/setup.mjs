@@ -34,12 +34,23 @@ const args = new Map(
     }),
 )
 
+function commandSpec(command, commandArgs) {
+  if (process.platform === 'win32' && ['npm', 'npx'].includes(command)) {
+    return {
+      command: process.env.ComSpec ?? 'cmd.exe',
+      args: ['/d', '/s', '/c', command, ...commandArgs],
+    }
+  }
+
+  return { command, args: commandArgs }
+}
+
 function run(command, commandArgs, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, commandArgs, {
+    const childCommand = commandSpec(command, commandArgs)
+    const child = spawn(childCommand.command, childCommand.args, {
       cwd: options.cwd ?? projectRoot,
       stdio: options.stdio ?? 'inherit',
-      shell: process.platform === 'win32',
     })
     child.on('error', reject)
     child.on('close', (code) => {
@@ -54,9 +65,9 @@ function run(command, commandArgs, options = {}) {
 
 async function capture(command, commandArgs) {
   return new Promise((resolve) => {
-    const child = spawn(command, commandArgs, {
+    const childCommand = commandSpec(command, commandArgs)
+    const child = spawn(childCommand.command, childCommand.args, {
       cwd: projectRoot,
-      shell: process.platform === 'win32',
       stdio: ['ignore', 'pipe', 'ignore'],
     })
     let text = ''

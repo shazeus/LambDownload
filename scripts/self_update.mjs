@@ -12,12 +12,23 @@ const projectRoot = path.resolve(__dirname, '..')
 const repoArgIndex = process.argv.indexOf('--repo')
 const repo = repoArgIndex >= 0 ? process.argv[repoArgIndex + 1] : 'shazeus/LambDownload'
 
+function commandSpec(command, args) {
+  if (process.platform === 'win32' && ['npm', 'npx'].includes(command)) {
+    return {
+      command: process.env.ComSpec ?? 'cmd.exe',
+      args: ['/d', '/s', '/c', command, ...args],
+    }
+  }
+
+  return { command, args }
+}
+
 function run(command, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const childCommand = commandSpec(command, args)
+    const child = spawn(childCommand.command, childCommand.args, {
       cwd: projectRoot,
       stdio: 'inherit',
-      shell: process.platform === 'win32',
     })
     child.on('error', reject)
     child.on('close', (code) => {
@@ -32,9 +43,9 @@ function run(command, args) {
 
 async function capture(command, args) {
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
+    const childCommand = commandSpec(command, args)
+    const child = spawn(childCommand.command, childCommand.args, {
       cwd: projectRoot,
-      shell: process.platform === 'win32',
       stdio: ['ignore', 'pipe', 'ignore'],
     })
     let text = ''
