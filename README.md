@@ -18,7 +18,6 @@ LambDownload is a local Adobe extension workflow. The panel runs inside Premiere
 - **No API Keys** - Users do not need YouTube API keys for search or download.
 - **Stream Merging** - Handles high-res video/audio stream merging through ffmpeg.
 - **Auto Update** - Checks GitHub Releases and can be turned off from the panel.
-- **Sponsor Ready** - Includes `.github/FUNDING.yml` for the GitHub sponsor button.
 
 ## Install
 
