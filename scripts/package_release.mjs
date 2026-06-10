@@ -56,11 +56,18 @@ const commonFiles = [
   'scripts',
   'server',
   'src',
+  'public',
   '.github',
+  'eslint.config.js',
+  'index.html',
   'package.json',
   'package-lock.json',
   'requirements.txt',
   'README.md',
+  'tsconfig.app.json',
+  'tsconfig.json',
+  'tsconfig.node.json',
+  'vite.config.ts',
   'LICENSE',
 ]
 
