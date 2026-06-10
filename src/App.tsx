@@ -10,7 +10,6 @@ import {
   MusicNotes,
   PlayCircle,
   ShieldCheck,
-  UserFocus,
   Warning,
 } from '@phosphor-icons/react'
 import {
@@ -206,26 +205,6 @@ function App() {
           Sponsor
         </a>
 
-        <div className="rail-section">
-          <p className="eyebrow">Pipeline</p>
-          <div className="step active">
-            <MagnifyingGlass size={18} />
-            Resolve source
-          </div>
-          <div className={job ? 'step active' : 'step'}>
-            <DownloadSimple size={18} />
-            Download streams
-          </div>
-          <div className={job?.stage === 'ready' ? 'step active' : 'step'}>
-            <FilmSlate size={18} />
-            Merge media
-          </div>
-          <div className={importResult ? 'step active' : 'step'}>
-            <ArrowSquareIn size={18} />
-            Import asset
-          </div>
-        </div>
-
         <div className="note">
           <ShieldCheck size={18} />
           <span>Use only videos you own, licensed media, or sources you are allowed to reuse.</span>
@@ -241,11 +220,6 @@ function App() {
               Search, prepare, and import authorized YouTube media into an active editing project
               without leaving the Adobe panel.
             </p>
-          </div>
-          <div className="host-card" aria-label="Supported hosts">
-            <UserFocus size={22} />
-            <span>UXP for Premiere</span>
-            <span>CEP bridge for After Effects</span>
           </div>
         </header>
 

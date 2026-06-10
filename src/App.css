@@ -21,7 +21,6 @@
 
 .creator,
 .sponsor,
-.step,
 .target,
 .quality,
 .result,
@@ -89,12 +88,6 @@
   transform: translateY(1px) scale(0.99);
 }
 
-.rail-section {
-  margin-top: 12px;
-  display: grid;
-  gap: 8px;
-}
-
 .eyebrow {
   margin: 0 0 8px;
   color: #607173;
@@ -103,22 +96,6 @@
   text-transform: uppercase;
   letter-spacing: 0;
   font-weight: 800;
-}
-
-.step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #718083;
-  border-left: 2px solid rgba(36, 43, 45, 0.14);
-  padding: 8px 0 8px 12px;
-  font-size: 14px;
-  font-weight: 650;
-}
-
-.step.active {
-  color: #193235;
-  border-left-color: #54716f;
 }
 
 .note {
@@ -140,8 +117,7 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: end;
   margin-bottom: 28px;
 }
@@ -167,22 +143,6 @@ h1 {
   color: #526163;
   font-size: 17px;
   line-height: 1.58;
-}
-
-.host-card {
-  border: 1px solid rgba(36, 43, 45, 0.13);
-  background: rgba(255, 255, 255, 0.74);
-  border-radius: 8px;
-  padding: 18px;
-  display: grid;
-  gap: 8px;
-  color: #526163;
-  font-size: 14px;
-  font-weight: 650;
-}
-
-.host-card svg {
-  color: #54716f;
 }
 
 .control-strip {
