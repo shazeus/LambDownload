@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LambDownload</title>
+    <script src="./CSInterface.js"></script>
+    <script>
+      window.__adobeHost = {
+        importAsset(path, target) {
+          return new Promise((resolve, reject) => {
+            try {
+              const csInterface = new CSInterface()
+              const escapedPath = path.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+              csInterface.evalScript(
+                `LambDownload.importAsset("${escapedPath}", "${target}")`,
+                (result) => {
+                  try {
+                    resolve(JSON.parse(result))
+                  } catch (error) {
+                    reject(error)
+                  }
+                },
+              )
+            } catch (error) {
+              reject(error)
+            }
+          })
+        },
+      }
+    </script>
+    <script type="module" crossorigin src="../../dist/assets/index.js"></script>
+    <link rel="stylesheet" crossorigin href="../../dist/assets/index.css" />
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

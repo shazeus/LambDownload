@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest
+  Version="11.0"
+  ExtensionBundleId="com.shazeus.lambdownload"
+  ExtensionBundleVersion="1.0.0"
+  ExtensionBundleName="LambDownload"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <ExtensionList>
+    <Extension Id="com.shazeus.lambdownload.panel" Version="1.0.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="PPRO" Version="[14.0,99.9]" />
+      <Host Name="AEFT" Version="[17.0,99.9]" />
+    </HostList>
+    <LocaleList>
+      <Locale Code="All" />
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="11.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.shazeus.lambdownload.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./client/index.html</MainPath>
+          <ScriptPath>./host/LambDownload.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access</Parameter>
+            <Parameter>--allow-file-access-from-files</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>LambDownload</Menu>
+          <Geometry>
+            <Size>
+              <Width>980</Width>
+              <Height>720</Height>
+            </Size>
+            <MinSize>
+              <Width>640</Width>
+              <Height>520</Height>
+            </MinSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

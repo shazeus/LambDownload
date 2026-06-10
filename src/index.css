@@ -1,0 +1,24 @@
+:root {
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-family:
+    "Aptos", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #242b2d;
+  background: #f7f8f5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}

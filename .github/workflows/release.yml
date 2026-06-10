@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install JavaScript dependencies
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Build release package
+        run: npm run release:pack
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/lambdownload-release.zip
+          generate_release_notes: true
