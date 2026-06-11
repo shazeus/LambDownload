@@ -1,7 +1,7 @@
 {
   "name": "lambdownload",
   "private": false,
-  "version": "2.0.0",
+  "version": "2.1.0",
   "type": "module",
   "main": "electron/main.cjs",
   "description": "Standalone desktop downloader for editor-ready media with drag-out workflow.",
@@ -12,7 +12,9 @@
     "service": "tsx server/index.ts",
     "desktop": "electron .",
     "desktop:dev": "concurrently -k -n vite,desktop \"npm run dev -- --host 127.0.0.1\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
-    "desktop:pack": "npm run build && electron-builder --publish=never",
+    "prepare:python-vendor": "node scripts/vendor_python.mjs",
+    "verify:python-worker": "node scripts/verify_python_worker.mjs",
+    "desktop:pack": "npm run prepare:python-vendor && npm run build && electron-builder --publish=never",
     "dev:all": "concurrently -k -n app,service \"npm run dev\" \"npm run service\"",
     "setup": "node scripts/setup.mjs",
     "install:app": "node scripts/install.mjs",
@@ -62,11 +64,14 @@
     "directories": {
       "output": "dist-desktop"
     },
+    "afterPack": "scripts/after_pack.cjs",
     "files": [
       "dist/**/*",
       "electron/**/*",
       "server/**/*",
       "scripts/**/*",
+      "vendor/python/**/*",
+      "vendor/python-runtime/**/*",
       "build/icon.png",
       "public/logo.png",
       "package.json",

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { DragEvent } from 'react'
 import {
   ArrowSquareOut,
   ArrowsOutCardinal,
@@ -12,7 +13,6 @@ import {
   MagnifyingGlass,
   MusicNotes,
   PlayCircle,
-  Sparkle,
   Warning,
 } from '@phosphor-icons/react'
 import {
@@ -29,6 +29,7 @@ import './App.css'
 
 const creatorUrl = 'https://github.com/shazeus'
 const sponsorUrl = 'https://github.com/sponsors/shazeus'
+const logoUrl = `${import.meta.env.BASE_URL}logo.png`
 
 type Theme = 'dark' | 'light'
 
@@ -198,10 +199,17 @@ function App() {
     window.open(url, '_blank', 'noreferrer')
   }
 
-  async function startDesktopDrag(filePath?: string) {
-    if (!filePath) return false
-    if (!window.lambdownload?.startDrag) return false
-    return window.lambdownload.startDrag(filePath)
+  function handleFileDragStart(event: DragEvent<HTMLElement>, filePath?: string) {
+    if (!filePath) return
+
+    if (window.lambdownload?.startDrag) {
+      event.preventDefault()
+      window.lambdownload.startDrag(filePath)
+      return
+    }
+
+    event.dataTransfer.setData('text/plain', filePath)
+    event.dataTransfer.effectAllowed = 'copy'
   }
 
   return (
@@ -209,7 +217,7 @@ function App() {
       <section className="app-frame">
         <header className="topbar">
           <button className="brand-mark" type="button" aria-label="LambDownload">
-            <img src="/logo.png" alt="" />
+            <img src={logoUrl} alt="" />
           </button>
           <div className="brand-copy">
             <strong>LambDownload</strong>
@@ -238,7 +246,6 @@ function App() {
             />
           </label>
           <button className="primary-button" type="button" onClick={handleSearch} disabled={status === 'searching'}>
-            <Sparkle size={18} />
             {status === 'searching' ? 'Searching' : 'Search'}
           </button>
         </section>
@@ -358,12 +365,7 @@ function App() {
                   <div
                     className="drag-card"
                     draggable
-                    onDragStart={(event) => {
-                      if (!readyJob.outputPath) return
-                      event.dataTransfer.setData('text/plain', readyJob.outputPath)
-                      event.dataTransfer.setData('DownloadURL', `video/mp4:${displayName(readyJob.outputPath)}:file://${readyJob.outputPath}`)
-                      void startDesktopDrag(readyJob.outputPath)
-                    }}
+                    onDragStart={(event) => handleFileDragStart(event, readyJob.outputPath)}
                   >
                     <ArrowsOutCardinal size={26} />
                     <span>
@@ -397,12 +399,7 @@ function App() {
                     className="download-item"
                     draggable
                     key={item.id}
-                    onDragStart={(event) => {
-                      if (!item.outputPath) return
-                      event.dataTransfer.setData('text/plain', item.outputPath)
-                      event.dataTransfer.setData('DownloadURL', `video/mp4:${displayName(item.outputPath)}:file://${item.outputPath}`)
-                      void startDesktopDrag(item.outputPath)
-                    }}
+                    onDragStart={(event) => handleFileDragStart(event, item.outputPath)}
                   >
                     <FileVideo size={21} />
                     <span>

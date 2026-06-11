@@ -133,7 +133,34 @@ function isNewerVersion(latest: string, current: string): boolean {
   return false
 }
 
+function bundledPython(): string | null {
+  const runtimeRoot = path.join(projectRoot, 'vendor', 'python-runtime')
+  const candidates =
+    process.platform === 'win32'
+      ? [
+          path.join(runtimeRoot, 'python', 'install', 'python.exe'),
+          path.join(runtimeRoot, 'install', 'python.exe'),
+          path.join(runtimeRoot, 'python', 'python.exe'),
+          path.join(runtimeRoot, 'python.exe'),
+        ]
+      : [
+          path.join(runtimeRoot, 'python', 'install', 'bin', 'python3'),
+          path.join(runtimeRoot, 'python', 'install', 'bin', 'python3.13'),
+          path.join(runtimeRoot, 'install', 'bin', 'python3'),
+          path.join(runtimeRoot, 'install', 'bin', 'python3.13'),
+          path.join(runtimeRoot, 'python', 'bin', 'python3'),
+          path.join(runtimeRoot, 'python', 'bin', 'python3.13'),
+        ]
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? null
+}
+
 function pythonRuntime(): { command: string; args: string[] } {
+  const bundled = bundledPython()
+  if (bundled) {
+    return { command: bundled, args: [] }
+  }
+
   if (process.env.LAMBDOWNLOAD_PYTHON) {
     return { command: process.env.LAMBDOWNLOAD_PYTHON, args: [] }
   }
@@ -158,7 +185,7 @@ function runWorker(args: string[]): Promise<string> {
     const python = pythonRuntime()
     const child = spawn(python.command, [...python.args, workerPath, ...args], {
       cwd: projectRoot,
-      env: { ...process.env, PYTHONUNBUFFERED: '1' },
+      env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1', PYTHONUNBUFFERED: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 

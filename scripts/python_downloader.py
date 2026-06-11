@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import glob
 import json
@@ -10,6 +12,13 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any
+
+
+sys.dont_write_bytecode = True
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+VENDOR_PYTHON = PROJECT_ROOT / "vendor" / "python"
+if VENDOR_PYTHON.exists():
+    sys.path.insert(0, str(VENDOR_PYTHON))
 
 
 QUALITIES = [
@@ -31,7 +40,7 @@ def load_yt_dlp():
         return yt_dlp
     except ImportError:
         print(
-            "Missing Python dependency. Run: python3 -m pip install -r requirements.txt",
+            "Missing bundled Python dependency. Reinstall LambDownload or run npm run prepare:python-vendor.",
             file=sys.stderr,
         )
         raise

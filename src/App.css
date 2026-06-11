@@ -49,16 +49,17 @@
 
 .app-frame {
   width: min(1500px, 100%);
+  min-height: calc(100dvh - 56px);
   margin: 0 auto;
   display: grid;
   gap: 18px;
+  grid-template-rows: auto auto auto auto 1fr auto;
 }
 
 .topbar,
 .search-deck,
 .update-strip,
-.panel,
-.footer {
+.panel {
   border: 1px solid var(--line);
   background: var(--surface);
   backdrop-filter: blur(18px);
@@ -546,7 +547,12 @@ code {
 
 .footer {
   justify-content: space-between;
-  padding: 12px;
+  align-self: end;
+  margin-top: 30px;
+  padding: 8px 0 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .profile-link,

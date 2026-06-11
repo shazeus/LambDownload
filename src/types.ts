@@ -69,7 +69,7 @@ export type ApplyUpdateResult = {
 
 export type LambDownloadDesktopApi = {
   isDesktop: boolean
-  startDrag: (filePath: string) => Promise<boolean>
+  startDrag: (filePath: string) => void
   revealFile: (filePath: string) => Promise<boolean>
   openExternal: (url: string) => Promise<boolean>
 }
