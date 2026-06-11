@@ -61,11 +61,16 @@ function run(command, args, options = {}) {
 }
 
 async function fetchJson(url) {
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'LambDownload',
+  }
+  if (process.env.GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`
+  }
+
   const response = await fetch(url, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'User-Agent': 'LambDownload',
-    },
+    headers,
   })
 
   if (!response.ok) {
@@ -76,8 +81,13 @@ async function fetchJson(url) {
 }
 
 async function downloadFile(url, filePath) {
+  const headers = { 'User-Agent': 'LambDownload' }
+  if (process.env.GITHUB_TOKEN && url.includes('api.github.com')) {
+    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`
+  }
+
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'LambDownload' },
+    headers,
   })
 
   if (!response.ok) {
