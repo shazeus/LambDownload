@@ -121,6 +121,19 @@ def search(query: str) -> None:
     emit({"results": results})
 
 
+def self_test() -> None:
+    yt_dlp = load_yt_dlp()
+    location = ffmpeg_location()
+    emit(
+        {
+            "ok": True,
+            "ytDlpVersion": getattr(yt_dlp.version, "__version__", "unknown"),
+            "ffmpeg": location,
+            "python": sys.version.split()[0],
+        }
+    )
+
+
 def format_selector(quality: str) -> str:
     if quality == "4k":
         return (
@@ -325,6 +338,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="LambDownload Python yt-dlp worker")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    subparsers.add_parser("self-test")
+
     search_parser = subparsers.add_parser("search")
     search_parser.add_argument("query")
 
@@ -334,7 +349,9 @@ def main() -> None:
     download_parser.add_argument("--outdir", default=os.path.expanduser("~/Movies/LambDownload"))
 
     args = parser.parse_args()
-    if args.command == "search":
+    if args.command == "self-test":
+        self_test()
+    elif args.command == "search":
         search(args.query)
     elif args.command == "download":
         download(args.url, args.quality, args.outdir)

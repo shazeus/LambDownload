@@ -65,12 +65,11 @@ if (!python) {
 }
 
 const version = await run(python, ['--version'])
-const output = await run(python, [workerPath, 'search', 'test'])
+const output = await run(python, [workerPath, 'self-test'])
 const payload = JSON.parse(output)
-const count = Array.isArray(payload.results) ? payload.results.length : 0
 
-if (count < 1) {
-  throw new Error('Python worker returned no search results.')
+if (!payload.ok || !payload.ytDlpVersion || !payload.ffmpeg) {
+  throw new Error(`Python worker self-test failed: ${output}`)
 }
 
-console.log(`${version.trim()} worker results=${count}`)
+console.log(`${version.trim()} yt-dlp=${payload.ytDlpVersion} ffmpeg=ok`)
