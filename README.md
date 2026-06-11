@@ -6,11 +6,13 @@
 
 Standalone desktop downloader for editor-ready YouTube media.
 
-![TypeScript](https://img.shields.io/badge/TypeScript-6+-3178c6?style=flat-square)
-![React](https://img.shields.io/badge/React-19-22272e?style=flat-square)
-![Electron](https://img.shields.io/badge/Electron-Desktop-47848f?style=flat-square)
-![Python](https://img.shields.io/badge/Python-yt--dlp-3776ab?style=flat-square)
-![License](https://img.shields.io/badge/License-CC%20BY--ND%204.0-green?style=flat-square)
+<p align="center">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-6+-3178c6?style=flat-square">
+  <img alt="React" src="https://img.shields.io/badge/React-19-22272e?style=flat-square">
+  <img alt="Electron" src="https://img.shields.io/badge/Electron-Desktop-47848f?style=flat-square">
+  <img alt="Python" src="https://img.shields.io/badge/Python-yt--dlp-3776ab?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/License-CC%20BY--ND%204.0-green?style=flat-square">
+</p>
 
 ---
 
