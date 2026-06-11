@@ -48,7 +48,7 @@ Or double-click:
 
 The setup checks Node, npm, and Python, installs or updates JavaScript packages, installs or updates Python downloader packages, builds the app, writes local settings, and creates a launcher.
 
-- macOS;
+- macOS installation;
 
 <img width="766" height="720" alt="macos instalation" src="https://github.com/user-attachments/assets/a90cceda-fae0-4015-8702-ab30bed672b8" />
 
@@ -82,6 +82,9 @@ npm run release:pack
 # Build native desktop package
 npm run desktop:pack
 ```
+Usage example;
+
+<img width="840" height="480" alt="0611 (1)" src="https://github.com/user-attachments/assets/6a1dbb04-28b8-4092-bef6-e3d376dcab8c" />
 
 Inside the app:
 
