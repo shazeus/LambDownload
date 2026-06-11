@@ -8,7 +8,7 @@ Standalone desktop downloader for editor-ready YouTube media.
 
 <p align="center">
   <a href="#english"><img alt="English" src="https://img.shields.io/badge/Language-EN-3178c6?style=flat-square"></a>
-  <a href="#turkce"><img alt="Turkce" src="https://img.shields.io/badge/Dil-TR-e30a17?style=flat-square"></a>
+  <a href="#turkce"><img alt="Türkçe" src="https://img.shields.io/badge/Dil-TR-e30a17?style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -63,7 +63,6 @@ macOS installation:
 <p align="center">
   <img width="766" height="720" alt="macOS installation" src="https://github.com/user-attachments/assets/a90cceda-fae0-4015-8702-ab30bed672b8">
 </p>
-
 
 Auto-update can be disabled during setup:
 
@@ -194,18 +193,18 @@ Only download videos you own, licensed media, or content you have explicit permi
 
 <a id="turkce"></a>
 
-## Turkce
+## Türkçe
 
-LambDownload, YouTube URL'si yapistirarak veya arama yaparak video bulmani, kalite secmeni, medyayi yerel olarak indirmeni ve tamamlanan dosyayi Premiere Pro, After Effects, DaVinci Resolve, Finder, Explorer veya dosya surukle-birak kabul eden herhangi bir uygulamaya dogrudan tasimani saglar.
+LambDownload, YouTube URL'si yapıştırarak veya arama yaparak video bulmanı, kalite seçmeni, medyayı yerel olarak indirmeni ve tamamlanan dosyayı Premiere Pro, After Effects, DaVinci Resolve, Finder, Explorer veya dosya sürükle-bırak kabul eden herhangi bir uygulamaya doğrudan taşımanı sağlar.
 
-- **Standalone Uygulama** - Adobe extension kurulumu, CEP, UXP veya panel ayari gerektirmez.
-- **API Key Yok** - Arama ve indirme YouTube API key istemeden yerelde calisir.
-- **Paketli Runtime** - Masaustu build'leri Python 3.13 ve indirme kutuphanelerini icerir; kullanicilar Python veya `yt-dlp` kurmaz.
-- **Editor-Safe Output** - Video indirmeleri H.264/AAC MP4, `yuv420p` ve faststart metadata ile editor uyumlu hale getirilir.
-- **Drag-Out Library** - Tamamlanan dosyalar uygulamada kalir; timeline'lara veya klasorlere surukleyebilirsin.
-- **Kalite Modlari** - 1080p, 4K, Audio Only ve Proxy.
-- **Auto Update** - GitHub Releases kontrol eder ve uygulama icinden kapatilabilir.
-- **Sponsor Ready** - GitHub sponsor butonu icin `.github/FUNDING.yml` icerir.
+- **Standalone Uygulama** - Adobe extension kurulumu, CEP, UXP veya panel ayarı gerektirmez.
+- **API Key Yok** - Arama ve indirme YouTube API key istemeden yerelde çalışır.
+- **Paketli Runtime** - Masaüstü build'leri Python 3.13 ve indirme kütüphanelerini içerir; kullanıcılar Python veya `yt-dlp` kurmaz.
+- **Editor-Safe Output** - Video indirmeleri H.264/AAC MP4, `yuv420p` ve faststart metadata ile editör uyumlu hale getirilir.
+- **Drag-Out Library** - Tamamlanan dosyalar uygulamada kalır; timeline'lara veya klasörlere sürükleyebilirsin.
+- **Kalite Modları** - 1080p, 4K, Audio Only ve Proxy.
+- **Auto Update** - GitHub Releases kontrol eder ve uygulama içinden kapatılabilir.
+- **Sponsor Ready** - GitHub sponsor butonu için `.github/FUNDING.yml` içerir.
 
 ## Kurulum
 
@@ -221,13 +220,13 @@ Basit kaynak kurulumu:
 npm run setup
 ```
 
-Ya da cift tikla:
+Ya da çift tıkla:
 
 - macOS: `installers/setup.command`
 - Windows: `installers/setup.bat`
 - Windows PowerShell: `installers/setup.ps1`
 
-Kaynak kurulumu Node ve npm'i kontrol eder, JavaScript paketlerini kurar veya gunceller, paketli Python downloader runtime'ini hazirlar, uygulamayi build eder, yerel ayarlari yazar ve launcher olusturur. Native masaustu installer'lari runtime'i zaten icerir.
+Kaynak kurulumu Node ve npm'i kontrol eder, JavaScript paketlerini kurar veya günceller, paketli Python downloader runtime'ını hazırlar, uygulamayı build eder, yerel ayarları yazar ve launcher oluşturur. Native masaüstü installer'ları runtime'ı zaten içerir.
 
 macOS kurulumu:
 
@@ -235,16 +234,16 @@ macOS kurulumu:
   <img width="766" height="720" alt="macOS kurulumu" src="https://github.com/user-attachments/assets/a90cceda-fae0-4015-8702-ab30bed672b8">
 </p>
 
-Auto-update kurulum sirasinda kapatilabilir:
+Auto-update kurulum sırasında kapatılabilir:
 
 ```bash
 npm run setup -- --auto-update=false
 ```
 
-## Kullanim
+## Kullanım
 
 ```bash
-# Standalone masaustu uygulamasini baslat
+# Standalone masaüstü uygulamasını başlat
 npm run desktop
 
 # Development modu
@@ -262,32 +261,32 @@ npm run build
 # Release zip build
 npm run release:pack
 
-# Native desktop paket build
+# Native desktop paketi build et
 npm run desktop:pack
 ```
 
-Kullanim ornegi:
+Kullanım örneği:
 
 <p align="center">
-  <img width="840" height="480" alt="LambDownload kullanim ornegi" src="https://github.com/user-attachments/assets/6a1dbb04-28b8-4092-bef6-e3d376dcab8c">
+  <img width="840" height="480" alt="LambDownload kullanım örneği" src="https://github.com/user-attachments/assets/6a1dbb04-28b8-4092-bef6-e3d376dcab8c">
 </p>
 
-Uygulama icinde:
+Uygulama içinde:
 
-1. YouTube URL'si yapistir veya basliga gore ara.
-2. `1080p`, `4K`, `Audio Only` veya `Proxy` sec.
-3. Medyayi local Python worker ile indir.
-4. Tamamlanan dosyayi LambDownload'dan herhangi bir editor, klasor veya timeline'a surukle.
+1. YouTube URL'si yapıştır veya başlığa göre ara.
+2. `1080p`, `4K`, `Audio Only` veya `Proxy` seç.
+3. Medyayı local Python worker ile indir.
+4. Tamamlanan dosyayı LambDownload'dan herhangi bir editör, klasör veya timeline'a sürükle.
 
-## Cikti
+## Çıktı
 
-Indirmeler yerelde saklanir:
+İndirmeler yerelde saklanır:
 
 ```txt
 ~/Movies/LambDownload
 ```
 
-Video modlari editor uyumlu `.mp4` dosyalari uretir:
+Video modları editör uyumlu `.mp4` dosyaları üretir:
 
 ```txt
 H.264 video
@@ -296,13 +295,13 @@ yuv420p pixel format
 faststart metadata
 ```
 
-Audio-only modu `.m4a` dosyasi uretir.
+Audio-only modu `.m4a` dosyası üretir.
 
 ## Auto Update
 
-LambDownload, local servis uzerinden `shazeus/LambDownload` GitHub Releases kontrolu yapar.
+LambDownload, local servis üzerinden `shazeus/LambDownload` GitHub Releases kontrolü yapar.
 
-Kullanicilar bunu uygulama icinden kapatabilir. Ayar yerelde saklanir:
+Kullanıcılar bunu uygulama içinden kapatabilir. Ayar yerelde saklanır:
 
 ```txt
 ~/.lambdownload/config.json
@@ -316,14 +315,14 @@ npm run update:self
 
 ## Release
 
-Tag olusturup pushla:
+Tag oluşturup pushla:
 
 ```bash
 git tag v2.1.0
 git push origin v2.1.0
 ```
 
-GitHub Actions sunlari build edip yayinlar:
+GitHub Actions şunları build edip yayınlar:
 
 ```txt
 release/lambdownload-release.zip
@@ -334,19 +333,19 @@ dist-desktop/*.zip
 dist-desktop/*.exe
 ```
 
-## Nasil Calisir
+## Nasıl Çalışır
 
-1. React/Electron uygulamasi URL veya arama terimini local Node servisine gonderir.
-2. Node `scripts/python_downloader.py` dosyasini cagirir.
-3. Python `yt-dlp`, metadata ve uygun formatlari cozer.
-4. Secilen stream gecici klasore indirilir.
-5. ffmpeg sabit, editor uyumlu cikti olusturur.
-6. Final dosya `~/Movies/LambDownload` klasorune tasinir.
-7. Electron dosyayi diger uygulamalara surukle-birak icin hazirlar.
+1. React/Electron uygulaması URL veya arama terimini local Node servisine gönderir.
+2. Node `scripts/python_downloader.py` dosyasını çağırır.
+3. Python `yt-dlp`, metadata ve uygun formatları çözer.
+4. Seçilen stream geçici klasöre indirilir.
+5. ffmpeg sabit, editör uyumlu çıktı oluşturur.
+6. Final dosya `~/Movies/LambDownload` klasörüne taşınır.
+7. Electron dosyayı diğer uygulamalara sürükle-bırak için hazırlar.
 
 ## Sorumluluk Reddi
 
-Yalnizca sahibi oldugun, lisansli veya yeniden kullanmak icin acik iznin olan videolari indir. LambDownload ozel erisim kontrollerini asmaz. Yetkili medya islemleri icin yerel bir workflow aracidir.
+Yalnızca sahibi olduğun, lisanslı veya yeniden kullanmak için açık iznin olan videoları indir. LambDownload özel erişim kontrollerini aşmaz. Yetkili medya işlemleri için yerel bir workflow aracıdır.
 
 ## Author
 
