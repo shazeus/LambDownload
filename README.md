@@ -48,6 +48,10 @@ Or double-click:
 
 The setup checks Node, npm, and Python, installs or updates JavaScript packages, installs or updates Python downloader packages, builds the app, writes local settings, and creates a launcher.
 
+- macOS;
+
+https://github.com/user-attachments/assets/2069537c-2d73-490c-9d36-ab71c4bd6460
+
 Auto-update can be disabled during setup:
 
 ```bash
