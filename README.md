@@ -50,7 +50,7 @@ The setup checks Node, npm, and Python, installs or updates JavaScript packages,
 
 - macOS;
 
-https://github.com/user-attachments/assets/2069537c-2d73-490c-9d36-ab71c4bd6460
+<img width="766" height="720" alt="macos instalation" src="https://github.com/user-attachments/assets/a90cceda-fae0-4015-8702-ab30bed672b8" />
 
 Auto-update can be disabled during setup:
 
