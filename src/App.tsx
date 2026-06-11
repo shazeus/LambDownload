@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  ArrowSquareOut,
+  ArrowsOutCardinal,
   CheckCircle,
   DownloadSimple,
+  FileVideo,
   FilmSlate,
-  FolderSimple,
+  FolderOpen,
+  GithubLogo,
   Heart,
-  ArrowSquareIn,
   MagnifyingGlass,
   MusicNotes,
   PlayCircle,
-  ShieldCheck,
+  Sparkle,
   Warning,
 } from '@phosphor-icons/react'
 import {
@@ -18,43 +21,47 @@ import {
   checkForUpdate,
   getDownloadJob,
   getSettings,
-  importDownloadedAsset,
   searchVideos,
   updateSettings,
 } from './api'
-import { importWithAdobeHost } from './adobeHost'
-import type {
-  AppSettings,
-  DownloadJob,
-  ImportResult,
-  ImportTarget,
-  QualityId,
-  SearchResult,
-  UpdateStatus,
-} from './types'
+import type { AppSettings, DownloadJob, QualityId, SearchResult, UpdateStatus } from './types'
 import './App.css'
 
 const creatorUrl = 'https://github.com/shazeus'
 const sponsorUrl = 'https://github.com/sponsors/shazeus'
 
+type Theme = 'dark' | 'light'
+
+function displayName(path?: string) {
+  if (!path) return 'No file yet'
+  return path.split(/[\\/]/).pop() ?? path
+}
+
 function App() {
-  const [query, setQuery] = useState('https://www.youtube.com/watch?v=example')
+  const [query, setQuery] = useState('')
   const [results, setResults] = useState<SearchResult[]>([])
   const [selected, setSelected] = useState<SearchResult | null>(null)
   const [quality, setQuality] = useState<QualityId>('1080p')
-  const [target, setTarget] = useState<ImportTarget>('project-bin')
   const [job, setJob] = useState<DownloadJob | null>(null)
-  const [importResult, setImportResult] = useState<ImportResult | null>(null)
+  const [downloads, setDownloads] = useState<DownloadJob[]>([])
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
   const [updateMessage, setUpdateMessage] = useState('')
-  const [status, setStatus] = useState<'idle' | 'searching' | 'downloading' | 'importing'>('idle')
+  const [theme, setTheme] = useState<Theme>('dark')
+  const [status, setStatus] = useState<'idle' | 'searching' | 'downloading'>('idle')
   const [error, setError] = useState('')
+  const [dragHint, setDragHint] = useState('Drag completed videos into Premiere, After Effects, Resolve, Finder, or any editor.')
 
   const selectedQuality = useMemo(
     () => selected?.qualities.find((item) => item.id === quality) ?? selected?.qualities[0],
     [quality, selected],
   )
+
+  const readyJob = job?.stage === 'ready' ? job : null
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+  }, [theme])
 
   useEffect(() => {
     async function loadSettings() {
@@ -84,7 +91,12 @@ function App() {
       try {
         const nextJob = await getDownloadJob(job.id)
         setJob(nextJob)
-        if (nextJob.stage === 'ready' || nextJob.stage === 'failed') {
+        if (nextJob.stage === 'ready') {
+          setDownloads((items) => [nextJob, ...items.filter((item) => item.id !== nextJob.id)].slice(0, 8))
+          setStatus('idle')
+          window.clearInterval(timer)
+        }
+        if (nextJob.stage === 'failed') {
           setStatus('idle')
           window.clearInterval(timer)
         }
@@ -106,7 +118,6 @@ function App() {
 
     setStatus('searching')
     setError('')
-    setImportResult(null)
     setJob(null)
 
     try {
@@ -131,7 +142,6 @@ function App() {
 
     setStatus('downloading')
     setError('')
-    setImportResult(null)
 
     try {
       const nextJob = await createDownloadJob(selected, selectedQuality.id)
@@ -142,30 +152,8 @@ function App() {
     }
   }
 
-  async function handleImport() {
-    if (!job?.outputPath) {
-      setError('Download must finish before import.')
-      return
-    }
-
-    setStatus('importing')
-    setError('')
-
-    try {
-      const hostResult = await importWithAdobeHost(job.outputPath, target)
-      const result = hostResult ?? (await importDownloadedAsset(job, target))
-      setImportResult(result)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Import failed')
-    } finally {
-      setStatus('idle')
-    }
-  }
-
   async function handleAutoUpdateToggle() {
-    if (!settings) {
-      return
-    }
+    if (!settings) return
 
     try {
       const nextSettings = await updateSettings({ autoUpdate: !settings.autoUpdate })
@@ -193,72 +181,74 @@ function App() {
     }
   }
 
+  async function revealFile(filePath?: string) {
+    if (!filePath) return
+    if (window.lambdownload?.revealFile) {
+      await window.lambdownload.revealFile(filePath)
+      return
+    }
+    setDragHint('File reveal works in the desktop app. In the browser preview, copy the path below.')
+  }
+
+  async function openCreator(url: string) {
+    if (window.lambdownload?.openExternal) {
+      await window.lambdownload.openExternal(url)
+      return
+    }
+    window.open(url, '_blank', 'noreferrer')
+  }
+
+  async function startDesktopDrag(filePath?: string) {
+    if (!filePath) return false
+    if (!window.lambdownload?.startDrag) return false
+    return window.lambdownload.startDrag(filePath)
+  }
+
   return (
-    <main className="shell">
-      <aside className="rail" aria-label="Project status">
-        <a className="creator" href={creatorUrl} target="_blank" rel="noreferrer">
-          <img src="https://github.com/shazeus.png?size=96" alt="Shazeus GitHub profile picture" />
-          <span>github/shazeus</span>
-        </a>
-        <a className="sponsor" href={sponsorUrl} target="_blank" rel="noreferrer">
-          <Heart size={16} weight="fill" />
-          Sponsor
-        </a>
-
-        <div className="note">
-          <ShieldCheck size={18} />
-          <span>Use only videos you own, licensed media, or sources you are allowed to reuse.</span>
-        </div>
-      </aside>
-
-      <section className="workspace">
-        <header className="hero">
-          <div>
-            <p className="eyebrow">Adobe Premiere Pro + After Effects</p>
-            <h1>LambDownload</h1>
-            <p className="lead">
-              Search, prepare, and import authorized YouTube media into an active editing project
-              without leaving the Adobe panel.
-            </p>
+    <main className="app-shell">
+      <section className="app-frame">
+        <header className="topbar">
+          <button className="brand-mark" type="button" aria-label="LambDownload">
+            <img src="/logo.png" alt="" />
+          </button>
+          <div className="brand-copy">
+            <strong>LambDownload</strong>
+            <span>Standalone media downloader</span>
+          </div>
+          <div className="topbar-actions">
+            <button className="ghost-button" type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+              {theme === 'dark' ? 'Light' : 'Dark'}
+            </button>
+            <button className={settings?.autoUpdate ? 'switch is-on' : 'switch'} type="button" onClick={handleAutoUpdateToggle}>
+              Auto update {settings?.autoUpdate ? 'On' : 'Off'}
+            </button>
           </div>
         </header>
 
-        <section className="control-strip" aria-label="Search controls">
-          <label className="input-block">
-            <span>URL or search</span>
-            <div className="search-field">
-              <MagnifyingGlass size={20} />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Paste a YouTube URL or search by title"
-              />
-            </div>
+        <section className="search-deck" aria-label="Search controls">
+          <label className="search-field">
+            <MagnifyingGlass size={20} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void handleSearch()
+              }}
+              placeholder="Paste a YouTube URL or search for a video"
+            />
           </label>
           <button className="primary-button" type="button" onClick={handleSearch} disabled={status === 'searching'}>
+            <Sparkle size={18} />
             {status === 'searching' ? 'Searching' : 'Search'}
           </button>
         </section>
 
         <section className="update-strip" aria-label="Update controls">
+          <span>{updateStatus?.message ?? (settings?.autoUpdate ? 'Release checks enabled' : 'Release checks disabled')}</span>
           <div>
-            <strong>Auto update</strong>
-            <span>
-              {updateStatus?.message ??
-                (settings?.autoUpdate ? 'Release checks are enabled' : 'Release checks are disabled')}
-            </span>
-          </div>
-          <div className="update-actions">
-            <button className={settings?.autoUpdate ? 'toggle active' : 'toggle'} type="button" onClick={handleAutoUpdateToggle}>
-              {settings?.autoUpdate ? 'On' : 'Off'}
-            </button>
-            <button className="secondary-button compact" type="button" onClick={handleUpdateCheck}>
-              Check
-            </button>
+            <button className="text-button" type="button" onClick={handleUpdateCheck}>Check</button>
             {updateStatus?.updateAvailable ? (
-              <button className="primary-button compact" type="button" onClick={handleApplyUpdate}>
-                Install
-              </button>
+              <button className="text-button strong" type="button" onClick={handleApplyUpdate}>Install</button>
             ) : null}
           </div>
         </section>
@@ -271,36 +261,34 @@ function App() {
           </div>
         ) : null}
 
-        <section className="content-grid">
-          <div className="results-pane">
+        <section className="main-grid">
+          <div className="panel">
             <div className="section-heading">
-              <h2>Results</h2>
-              <span>{results.length ? `${results.length} found` : 'Waiting for input'}</span>
+              <h2>Sources</h2>
+              <span>{results.length ? `${results.length} results` : 'No search yet'}</span>
             </div>
-
             {results.length === 0 ? (
               <div className="empty-state">
-                <PlayCircle size={34} />
-                <p>Search results will appear here with title, source, duration, and reuse note.</p>
+                <PlayCircle size={36} />
+                <p>Results appear here with title, channel, duration, and reuse reminder.</p>
               </div>
             ) : (
               <div className="result-list">
                 {results.map((result) => (
                   <button
-                    className={selected?.id === result.id ? 'result active' : 'result'}
+                    className={selected?.id === result.id ? 'result is-active' : 'result'}
                     key={result.id}
                     type="button"
                     onClick={() => {
                       setSelected(result)
                       setQuality(result.qualities[0]?.id ?? '1080p')
                       setJob(null)
-                      setImportResult(null)
                     }}
                   >
                     <img src={result.thumbnail} alt="" />
                     <span>
                       <strong>{result.title}</strong>
-                      <small>{result.channel} - {result.duration}</small>
+                      <small>{result.channel} / {result.duration}</small>
                     </span>
                   </button>
                 ))}
@@ -308,10 +296,10 @@ function App() {
             )}
           </div>
 
-          <div className="detail-pane">
+          <div className="panel prepare-panel">
             <div className="section-heading">
               <h2>Prepare</h2>
-              <span>{selected ? 'Source selected' : 'No source'}</span>
+              <span>{selected ? 'Ready to download' : 'Choose a source'}</span>
             </div>
 
             {selected ? (
@@ -327,46 +315,27 @@ function App() {
                 <div className="quality-grid" aria-label="Quality selection">
                   {selected.qualities.map((item) => (
                     <button
-                      className={quality === item.id ? 'quality active' : 'quality'}
+                      className={quality === item.id ? 'quality is-active' : 'quality'}
                       key={item.id}
                       type="button"
                       onClick={() => setQuality(item.id)}
                     >
-                      {item.id === 'audio' ? <MusicNotes size={20} /> : <FilmSlate size={20} />}
+                      {item.id === 'audio' ? <MusicNotes size={21} /> : <FileVideo size={21} />}
                       <span>{item.label}</span>
                       <small>{item.detail}</small>
                     </button>
                   ))}
                 </div>
 
-                <div className="target-row">
-                  <button
-                    className={target === 'project-bin' ? 'target active' : 'target'}
-                    type="button"
-                    onClick={() => setTarget('project-bin')}
-                  >
-                    <FolderSimple size={18} />
-                    Project bin
-                  </button>
-                  <button
-                    className={target === 'timeline' ? 'target active' : 'target'}
-                    type="button"
-                    onClick={() => setTarget('timeline')}
-                  >
-                    <PlayCircle size={18} />
-                    Timeline
-                  </button>
-                </div>
-
                 <div className="progress-panel">
                   <div>
-                    <span>{job?.message ?? 'Ready to create a download job'}</span>
+                    <span>{job?.message ?? 'Waiting for a download job'}</span>
                     <strong>{job ? `${job.progress}%` : '0%'}</strong>
                   </div>
                   <div className="progress-track">
                     <span style={{ width: `${job?.progress ?? 0}%` }} />
                   </div>
-                  {job?.outputPath ? <code>{job.outputPath}</code> : null}
+                  <code>{displayName(job?.outputPath)}</code>
                 </div>
 
                 <div className="action-row">
@@ -379,32 +348,89 @@ function App() {
                     <DownloadSimple size={18} />
                     {status === 'downloading' ? 'Downloading' : 'Download'}
                   </button>
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={handleImport}
-                    disabled={!job?.outputPath || status === 'importing'}
-                  >
-                    <ArrowSquareIn size={18} />
-                    {status === 'importing' ? 'Importing' : 'Import to Project'}
+                  <button className="secondary-button" type="button" onClick={() => void revealFile(readyJob?.outputPath)} disabled={!readyJob?.outputPath}>
+                    <FolderOpen size={18} />
+                    Reveal
                   </button>
                 </div>
 
-                {importResult ? (
-                  <div className="success">
-                    <CheckCircle size={18} weight="fill" />
-                    <span>{importResult.message}</span>
+                {readyJob ? (
+                  <div
+                    className="drag-card"
+                    draggable
+                    onDragStart={(event) => {
+                      if (!readyJob.outputPath) return
+                      event.dataTransfer.setData('text/plain', readyJob.outputPath)
+                      event.dataTransfer.setData('DownloadURL', `video/mp4:${displayName(readyJob.outputPath)}:file://${readyJob.outputPath}`)
+                      void startDesktopDrag(readyJob.outputPath)
+                    }}
+                  >
+                    <ArrowsOutCardinal size={26} />
+                    <span>
+                      <strong>Drag this file into any app</strong>
+                      <small>{displayName(readyJob.outputPath)}</small>
+                    </span>
+                    <CheckCircle size={22} weight="fill" />
                   </div>
                 ) : null}
               </>
             ) : (
-              <div className="empty-state detail-empty">
-                <FilmSlate size={34} />
-                <p>Select a result to choose quality, download target, and Adobe import mode.</p>
+              <div className="empty-state">
+                <FilmSlate size={36} />
+                <p>Select a source to choose 1080p, 4K, proxy, or audio-only output.</p>
               </div>
             )}
           </div>
+
+          <aside className="panel library-panel">
+            <div className="section-heading">
+              <h2>Library</h2>
+              <span>{downloads.length ? 'Latest files' : 'Empty'}</span>
+            </div>
+            <p className="library-hint">{dragHint}</p>
+            <div className="download-list">
+              {downloads.length === 0 ? (
+                <div className="mini-empty">Finished downloads will stay here for quick drag-out.</div>
+              ) : (
+                downloads.map((item) => (
+                  <div
+                    className="download-item"
+                    draggable
+                    key={item.id}
+                    onDragStart={(event) => {
+                      if (!item.outputPath) return
+                      event.dataTransfer.setData('text/plain', item.outputPath)
+                      event.dataTransfer.setData('DownloadURL', `video/mp4:${displayName(item.outputPath)}:file://${item.outputPath}`)
+                      void startDesktopDrag(item.outputPath)
+                    }}
+                  >
+                    <FileVideo size={21} />
+                    <span>
+                      <strong>{item.title}</strong>
+                      <small>{displayName(item.outputPath)} / {item.quality}</small>
+                    </span>
+                    <button type="button" aria-label="Reveal file" onClick={() => void revealFile(item.outputPath)}>
+                      <FolderOpen size={17} />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </aside>
         </section>
+
+        <footer className="footer">
+          <button className="profile-link" type="button" onClick={() => void openCreator(creatorUrl)}>
+            <img src="https://github.com/shazeus.png?size=96" alt="Shazeus GitHub profile" />
+            <span>github/shazeus</span>
+            <GithubLogo size={18} />
+          </button>
+          <button className="support-link" type="button" onClick={() => void openCreator(sponsorUrl)}>
+            <Heart size={16} weight="fill" />
+            Support
+            <ArrowSquareOut size={16} />
+          </button>
+        </footer>
       </section>
     </main>
   )

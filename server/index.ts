@@ -9,7 +9,7 @@ import { randomUUID } from 'node:crypto'
 import { z } from 'zod'
 
 type QualityId = '1080p' | '4k' | 'audio' | 'proxy'
-type JobStage = 'queued' | 'resolving' | 'video' | 'audio' | 'muxing' | 'ready' | 'failed'
+type JobStage = 'queued' | 'resolving' | 'video' | 'audio' | 'muxing' | 'transcoding' | 'ready' | 'failed'
 
 type DownloadJob = {
   id: string
@@ -288,7 +288,7 @@ app.post('/api/update/apply', (_request, response) => {
   response.status(202).json({
     result: {
       started: true,
-      message: 'Update started in the background. Restart the panel after it finishes.',
+      message: 'Update started in the background. Restart the app after it finishes.',
     },
   })
 })
@@ -441,7 +441,7 @@ app.post('/api/import', (request, response) => {
       host: 'browser-demo',
       target: parsed.data.target,
       path: outputPath,
-      message: `Ready for Adobe import: ${path.basename(outputPath)}`,
+      message: `Ready to drag into any app: ${path.basename(outputPath)}`,
     },
   })
 })

@@ -1,17 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process'
-import {
-  access,
-  cp,
-  mkdir,
-  readFile,
-  rm,
-  symlink,
-  writeFile,
-} from 'node:fs/promises'
+import { access, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
-import { createInterface } from 'node:readline/promises'
-import { stdin as input, stdout as output } from 'node:process'
 import { homedir, platform } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -21,7 +11,6 @@ const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 const packagePath = path.join(projectRoot, 'package.json')
 const configRoot = path.join(homedir(), '.lambdownload')
-const extensionId = 'com.shazeus.lambdownload.panel'
 let pythonRuntime = null
 
 const args = new Map(
@@ -134,51 +123,6 @@ async function packageVersion() {
   return payload.version
 }
 
-async function chooseTarget() {
-  const argTarget = args.get('target')
-  if (argTarget) {
-    return argTarget
-  }
-
-  const rl = createInterface({ input, output })
-  console.log('\nLambDownload Setup')
-  console.log('1) After Effects')
-  console.log('2) Premiere Pro')
-  console.log('3) Both')
-  console.log('4) Dependencies only')
-  const answer = await rl.question('Install target [3]: ')
-  rl.close()
-
-  if (answer.trim() === '1') return 'after'
-  if (answer.trim() === '2') return 'premiere'
-  if (answer.trim() === '4') return 'deps'
-  return 'both'
-}
-
-function cepExtensionsRoot() {
-  if (process.platform === 'win32') {
-    const appData = process.env.APPDATA
-    if (!appData) {
-      throw new Error('APPDATA is not set; cannot locate Adobe CEP extensions folder.')
-    }
-    return path.join(appData, 'Adobe', 'CEP', 'extensions')
-  }
-
-  return path.join(homedir(), 'Library', 'Application Support', 'Adobe', 'CEP', 'extensions')
-}
-
-function uxpExternalRoot() {
-  if (process.platform === 'win32') {
-    const appData = process.env.APPDATA
-    if (!appData) {
-      throw new Error('APPDATA is not set; cannot locate Adobe UXP folder.')
-    }
-    return path.join(appData, 'Adobe', 'UXP', 'Plugins', 'External')
-  }
-
-  return path.join(homedir(), 'Library', 'Application Support', 'Adobe', 'UXP', 'Plugins', 'External')
-}
-
 async function ensureConfig() {
   const autoUpdate = args.get('auto-update') !== 'false'
   if (!pythonRuntime) {
@@ -201,7 +145,8 @@ async function ensureConfig() {
 }
 
 async function ensureDependencies() {
-  console.log('\nChecking runtime dependencies...')
+  console.log('\nLambDownload Standalone Setup')
+  console.log('Checking runtime dependencies...')
   const nodeVersion = await capture('node', ['--version'])
   const npmVersion = await capture('npm', ['--version'])
   pythonRuntime = await findPython()
@@ -227,58 +172,13 @@ async function ensureDependencies() {
   await runPython(['-m', 'pip', 'install', '--upgrade', '-r', 'requirements.txt'])
 }
 
-async function buildPanel() {
+async function buildApp() {
   if (args.get('build') === 'false') {
     return
   }
 
-  console.log('\nBuilding panel assets...')
+  console.log('\nBuilding standalone app assets...')
   await run('npm', ['run', 'build'])
-}
-
-async function installCepBundle(target) {
-  if (target === 'deps') {
-    return null
-  }
-
-  const destination = path.join(cepExtensionsRoot(), extensionId)
-  console.log(`\nInstalling CEP panel to ${destination}`)
-
-  await rm(destination, { recursive: true, force: true })
-  await mkdir(destination, { recursive: true })
-  await cp(path.join(projectRoot, 'adobe', 'cep', 'CSXS'), path.join(destination, 'CSXS'), {
-    recursive: true,
-  })
-  await cp(path.join(projectRoot, 'adobe', 'cep', 'client'), path.join(destination, 'client'), {
-    recursive: true,
-  })
-  await cp(path.join(projectRoot, 'adobe', 'cep', 'host'), path.join(destination, 'host'), {
-    recursive: true,
-  })
-  await cp(path.join(projectRoot, 'dist'), path.join(destination, 'dist'), {
-    recursive: true,
-  })
-
-  const targetFile = path.join(destination, 'install-target.txt')
-  await writeFile(
-    targetFile,
-    `Installed for: ${target}\nVersion: ${await packageVersion()}\nUse Adobe Window > Extensions > LambDownload.\n`,
-  )
-  return destination
-}
-
-async function installUxpReference(target) {
-  if (target !== 'premiere' && target !== 'both') {
-    return null
-  }
-
-  const destination = path.join(uxpExternalRoot(), 'com.shazeus.lambdownload')
-  console.log(`Installing Premiere UXP reference package to ${destination}`)
-  await rm(destination, { recursive: true, force: true })
-  await mkdir(destination, { recursive: true })
-  await cp(path.join(projectRoot, 'adobe', 'uxp'), destination, { recursive: true })
-  await cp(path.join(projectRoot, 'dist'), path.join(destination, 'dist'), { recursive: true })
-  return destination
 }
 
 async function writeLaunchers() {
@@ -290,12 +190,12 @@ async function writeLaunchers() {
 
   await writeFile(
     macLauncher,
-    `#!/usr/bin/env sh\ncd "${projectRoot.replaceAll('"', '\\"')}"\nnpm run dev:all\n`,
+    `#!/usr/bin/env sh\ncd "${projectRoot.replaceAll('"', '\\"')}"\nnpm run desktop\n`,
     { mode: 0o755 },
   )
   await writeFile(
     windowsLauncher,
-    `@echo off\r\ncd /d "${projectRoot}"\r\nnpm run dev:all\r\npause\r\n`,
+    `@echo off\r\ncd /d "${projectRoot}"\r\nnpm run desktop\r\npause\r\n`,
   )
 
   if (platform() !== 'win32') {
@@ -311,25 +211,16 @@ async function writeLaunchers() {
 }
 
 async function main() {
-  const target = await chooseTarget()
-  if (!['after', 'premiere', 'both', 'deps'].includes(target)) {
-    throw new Error('Invalid target. Use after, premiere, both, or deps.')
-  }
-
   await ensureDependencies()
   await ensureConfig()
-  await buildPanel()
-
-  const cepPath = await installCepBundle(target)
-  const uxpPath = await installUxpReference(target)
+  await buildApp()
   const launchers = await writeLaunchers()
 
   console.log('\nSetup complete.')
-  console.log(`Target: ${target}`)
-  if (cepPath) console.log(`CEP panel: ${cepPath}`)
-  if (uxpPath) console.log(`UXP reference: ${uxpPath}`)
+  console.log(`Version: ${await packageVersion()}`)
+  console.log(`Auto update: ${args.get('auto-update') === 'false' ? 'off' : 'on'}`)
   console.log(`Launcher: ${platform() === 'win32' ? launchers.windowsLauncher : launchers.macLauncher}`)
-  console.log('Start the local service before opening the Adobe panel.')
+  console.log('Start LambDownload with npm run desktop or the generated launcher.')
 }
 
 main().catch((error) => {

@@ -1,12 +1,18 @@
 {
   "name": "lambdownload",
   "private": false,
-  "version": "1.0.6",
+  "version": "2.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "description": "Standalone desktop downloader for editor-ready media with drag-out workflow.",
+  "author": "shazeus",
   "scripts": {
     "dev": "vite",
     "service": "tsx server/index.ts",
-    "dev:all": "concurrently -k -n panel,service \"npm run dev\" \"npm run service\"",
+    "desktop": "electron .",
+    "desktop:dev": "concurrently -k -n vite,desktop \"npm run dev -- --host 127.0.0.1\" \"cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5173 electron .\"",
+    "desktop:pack": "npm run build && electron-builder --publish=never",
+    "dev:all": "concurrently -k -n app,service \"npm run dev\" \"npm run service\"",
     "setup": "node scripts/setup.mjs",
     "install:app": "node scripts/install.mjs",
     "setup:python": "python3 -m pip install -r requirements.txt",
@@ -24,6 +30,7 @@
     "extract-zip": "^2.0.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "tsx": "^4.22.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -35,15 +42,57 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^42.4.0",
+    "cross-env": "^7.0.3",
+    "electron-builder": "^26.15.2",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "playwright": "^1.60.0",
-    "tsx": "^4.22.4",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12",
-    "yazl": "^3.3.1"
+    "vite": "^8.0.12"
+  },
+  "build": {
+    "appId": "com.shazeus.lambdownload",
+    "productName": "LambDownload",
+    "asar": false,
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "scripts/**/*",
+      "build/icon.png",
+      "public/logo.png",
+      "package.json",
+      "package-lock.json",
+      "requirements.txt",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.video"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }

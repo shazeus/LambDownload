@@ -23,6 +23,7 @@ export type JobStage =
   | 'video'
   | 'audio'
   | 'muxing'
+  | 'transcoding'
   | 'ready'
   | 'failed'
 
@@ -64,4 +65,17 @@ export type UpdateStatus = {
 export type ApplyUpdateResult = {
   started: boolean
   message: string
+}
+
+export type LambDownloadDesktopApi = {
+  isDesktop: boolean
+  startDrag: (filePath: string) => Promise<boolean>
+  revealFile: (filePath: string) => Promise<boolean>
+  openExternal: (url: string) => Promise<boolean>
+}
+
+declare global {
+  interface Window {
+    lambdownload?: LambDownloadDesktopApi
+  }
 }
