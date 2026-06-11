@@ -28,6 +28,15 @@ QUALITIES = [
     {"id": "proxy", "label": "Proxy", "detail": "Fast 720p editing copy"},
 ]
 
+HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/125.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+}
+
 
 def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False), flush=True)
@@ -135,25 +144,51 @@ def self_test() -> None:
 
 
 def format_selector(quality: str) -> str:
+    return format_attempts(quality)[0][1]
+
+
+def format_attempts(quality: str) -> list[tuple[str, str]]:
     if quality == "4k":
-        return (
-            "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-            "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/"
-            "best[height<=2160]/best"
-        )
+        return [
+            (
+                "4K H.264/AAC stream pair",
+                "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+                "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/"
+                "best[height<=2160]/best",
+            ),
+            (
+                "stable 1080p H.264/AAC stream pair",
+                "bestvideo[height<=1080][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+                "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
+                "best[height<=1080]/best",
+            ),
+            ("progressive MP4 fallback", "best[height<=2160][ext=mp4]/best[ext=mp4]/best"),
+        ]
     if quality == "audio":
-        return "bestaudio/best"
+        return [
+            ("M4A audio stream", "bestaudio[ext=m4a]/bestaudio/best"),
+            ("best audio fallback", "bestaudio/best"),
+        ]
     if quality == "proxy":
-        return (
-            "bestvideo[height<=720][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-            "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/"
-            "best[height<=720]/best"
-        )
-    return (
-        "bestvideo[height<=1080][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-        "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
-        "best[height<=1080]/best"
-    )
+        return [
+            (
+                "720p H.264/AAC stream pair",
+                "bestvideo[height<=720][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+                "bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/"
+                "best[height<=720]/best",
+            ),
+            ("progressive 720p MP4 fallback", "best[height<=720][ext=mp4]/best[ext=mp4]/best"),
+        ]
+    return [
+        (
+            "1080p H.264/AAC stream pair",
+            "bestvideo[height<=1080][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+            "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
+            "best[height<=1080]/best",
+        ),
+        ("progressive 1080p MP4 fallback", "best[height<=1080][ext=mp4]/best[ext=mp4]/best"),
+        ("best available fallback", "best"),
+    ]
 
 
 def stage_from_status(status: dict[str, Any], quality: str) -> str:
@@ -245,13 +280,42 @@ def transcode_editor_mp4(source: Path, destination: Path, quality: str, ffmpeg: 
     validate_output(destination)
 
 
-def download(url: str, quality: str, outdir: str) -> None:
-    yt_dlp = load_yt_dlp()
-    output_dir = Path(outdir).expanduser()
-    output_dir.mkdir(parents=True, exist_ok=True)
-    location = ffmpeg_location()
+def common_download_options() -> dict[str, Any]:
+    return {
+        "noplaylist": True,
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+        "restrictfilenames": True,
+        "windowsfilenames": True,
+        "continuedl": True,
+        "retries": 12,
+        "fragment_retries": 12,
+        "extractor_retries": 5,
+        "file_access_retries": 5,
+        "socket_timeout": 30,
+        "http_headers": HTTP_HEADERS,
+        "cachedir": False,
+    }
 
-    emit({"type": "progress", "stage": "resolving", "progress": 5, "message": "Resolving YouTube formats"})
+
+def download_to_temp(
+    yt_dlp: Any,
+    url: str,
+    quality: str,
+    temp_dir: Path,
+    format_expression: str,
+    attempt_label: str,
+    location: str | None,
+) -> tuple[dict[str, Any], Path]:
+    emit(
+        {
+            "type": "progress",
+            "stage": "resolving",
+            "progress": 7,
+            "message": f"Trying {attempt_label}",
+        }
+    )
 
     def hook(status: dict[str, Any]) -> None:
         if status.get("status") == "downloading":
@@ -276,45 +340,91 @@ def download(url: str, quality: str, outdir: str) -> None:
                 }
             )
 
+    options: dict[str, Any] = {
+        **common_download_options(),
+        "format": format_expression,
+        "outtmpl": str(temp_dir / "%(title).80s-%(id)s.%(ext)s"),
+        "progress_hooks": [hook],
+        "merge_output_format": "mp4",
+    }
+
+    if location:
+        options["ffmpeg_location"] = location
+
+    if quality == "audio":
+        options["postprocessors"] = [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "m4a",
+                "preferredquality": "0",
+            }
+        ]
+
+    with yt_dlp.YoutubeDL(options) as ydl:
+        info = ydl.extract_info(url, download=True)
+
+    video_id = str(info.get("id") or "")
+    output_path = newest_output(temp_dir, video_id)
+    if not output_path:
+        raise RuntimeError("Download finished but output file could not be located")
+
+    return info, Path(output_path)
+
+
+def clean_error_message(error: BaseException) -> str:
+    message = str(error).strip()
+    message = re.sub(r"\s+", " ", message)
+    message = re.sub(r"^ERROR:\s*", "", message)
+    message = re.sub(r"^yt_dlp\.utils\.DownloadError:\s*", "", message)
+    return message or error.__class__.__name__
+
+
+def download(url: str, quality: str, outdir: str) -> None:
+    yt_dlp = load_yt_dlp()
+    output_dir = Path(outdir).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    location = ffmpeg_location()
+
+    emit({"type": "progress", "stage": "resolving", "progress": 5, "message": "Resolving YouTube formats"})
+
     with tempfile.TemporaryDirectory(prefix="lambdownload-") as temp_root:
         temp_dir = Path(temp_root)
-        options: dict[str, Any] = {
-            "format": format_selector(quality),
-            "outtmpl": str(temp_dir / "%(title).80s-%(id)s.%(ext)s"),
-            "noplaylist": True,
-            "quiet": True,
-            "no_warnings": True,
-            "noprogress": True,
-            "progress_hooks": [hook],
-            "merge_output_format": "mp4",
-            "restrictfilenames": True,
-            "continuedl": True,
-            "retries": 10,
-            "fragment_retries": 10,
-        }
+        failures: list[str] = []
+        info: dict[str, Any] | None = None
+        source: Path | None = None
 
-        if location:
-            options["ffmpeg_location"] = location
+        for attempt_index, (attempt_label, format_expression) in enumerate(format_attempts(quality), start=1):
+            attempt_dir = temp_dir / f"attempt-{attempt_index}"
+            attempt_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                info, source = download_to_temp(
+                    yt_dlp,
+                    url,
+                    quality,
+                    attempt_dir,
+                    format_expression,
+                    attempt_label,
+                    location,
+                )
+                break
+            except Exception as error:
+                failures.append(f"{attempt_label}: {clean_error_message(error)}")
+                if attempt_index < len(format_attempts(quality)):
+                    emit(
+                        {
+                            "type": "progress",
+                            "stage": "resolving",
+                            "progress": 10,
+                            "message": "Retrying with a safer format",
+                        }
+                    )
 
-        if quality == "audio":
-            options["postprocessors"] = [
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "m4a",
-                    "preferredquality": "0",
-                }
-            ]
+        if info is None or source is None:
+            joined = " | ".join(failures[-3:])
+            raise RuntimeError(f"Download failed after fallback attempts. {joined}")
 
-        with yt_dlp.YoutubeDL(options) as ydl:
-            info = ydl.extract_info(url, download=True)
-
-        video_id = str(info.get("id") or "")
-        output_path = newest_output(temp_dir, video_id)
-        if not output_path:
-            raise RuntimeError("Download finished but output file could not be located")
-
-        source = Path(output_path)
         title = str(info.get("title") or "LambDownload")
+        video_id = str(info.get("id") or "")
         if quality == "audio":
             destination = unique_path(output_dir / f"{safe_stem(title, video_id, quality)}.m4a")
             shutil.move(str(source), destination)
@@ -358,4 +468,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        if os.environ.get("LAMBDOWNLOAD_DEBUG"):
+            raise
+        print(clean_error_message(error), file=sys.stderr)
+        sys.exit(1)

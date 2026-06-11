@@ -180,12 +180,39 @@ function pythonRuntime(): { command: string; args: string[] } {
   return { command: 'python3', args: [] }
 }
 
+function compactWorkerError(stderr: string, fallback: string): string {
+  const lines = stderr
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !line.startsWith('Traceback '))
+    .filter((line) => !line.startsWith('File "'))
+    .filter((line) => !line.startsWith('raise '))
+    .filter((line) => !line.startsWith('During handling of the above exception'))
+    .filter((line) => !line.includes('vendor\\python'))
+    .filter((line) => !line.includes('vendor/python'))
+
+  const useful =
+    [...lines].reverse().find((line) => !/^\^+$/.test(line) && !line.startsWith('~')) ??
+    fallback
+
+  return useful
+    .replace(/^ERROR:\s*/i, '')
+    .replace(/^yt_dlp\.utils\.DownloadError:\s*/i, '')
+    .slice(0, 420)
+}
+
 function runWorker(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const python = pythonRuntime()
     const child = spawn(python.command, [...python.args, workerPath, ...args], {
       cwd: projectRoot,
-      env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1', PYTHONUNBUFFERED: '1' },
+      env: {
+        ...process.env,
+        PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONNOUSERSITE: '1',
+        PYTHONUNBUFFERED: '1',
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -203,7 +230,7 @@ function runWorker(args: string[]): Promise<string> {
         resolve(stdout)
         return
       }
-      reject(new Error(stderr.trim() || `Python worker exited with ${code}`))
+      reject(new Error(compactWorkerError(stderr, `Python worker exited with ${code}`)))
     })
   })
 }
@@ -371,12 +398,18 @@ app.post('/api/jobs', (request, response) => {
     ],
     {
       cwd: projectRoot,
-      env: { ...process.env, PYTHONUNBUFFERED: '1' },
+      env: {
+        ...process.env,
+        PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONNOUSERSITE: '1',
+        PYTHONUNBUFFERED: '1',
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   )
 
   let buffer = ''
+  let stderrBuffer = ''
 
   child.stdout.on('data', (chunk: Buffer) => {
     buffer += chunk.toString()
@@ -407,7 +440,8 @@ app.post('/api/jobs', (request, response) => {
   child.stderr.on('data', (chunk: Buffer) => {
     const detail = chunk.toString().trim()
     if (detail) {
-      job.message = detail.slice(0, 180)
+      stderrBuffer += `${detail}\n`
+      job.message = compactWorkerError(stderrBuffer, detail)
       jobs.set(id, { ...job })
     }
   })
@@ -426,7 +460,7 @@ app.post('/api/jobs', (request, response) => {
         ...latest,
         stage: 'failed',
         progress: 100,
-        message: latest.message || `Download worker exited with ${code}`,
+        message: compactWorkerError(stderrBuffer, latest.message || `Download worker exited with ${code}`),
       })
     }
   })

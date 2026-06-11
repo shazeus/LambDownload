@@ -65,6 +65,15 @@ if (!python) {
 }
 
 const version = await run(python, ['--version'])
+await run(python, [
+  '-c',
+  [
+    'from pathlib import Path',
+    'for root in ("scripts", "vendor/python"):',
+    '    for path in Path(root).rglob("*.py"):',
+    '        compile(path.read_text(encoding="utf-8"), str(path), "exec")',
+  ].join('\n'),
+])
 const output = await run(python, [workerPath, 'self-test'])
 const payload = JSON.parse(output)
 
