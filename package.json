@@ -6,6 +6,7 @@
   "main": "electron/main.cjs",
   "description": "Standalone desktop downloader for editor-ready media with drag-out workflow.",
   "author": "shazeus",
+  "license": "CC-BY-ND-4.0",
   "scripts": {
     "dev": "vite",
     "service": "tsx server/index.ts",

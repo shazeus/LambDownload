@@ -10,7 +10,7 @@ Standalone desktop downloader for editor-ready YouTube media.
 ![React](https://img.shields.io/badge/React-19-22272e?style=flat-square)
 ![Electron](https://img.shields.io/badge/Electron-Desktop-47848f?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-yt--dlp-3776ab?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+![License](https://img.shields.io/badge/License-CC%20BY--ND%204.0-green?style=flat-square)
 
 ---
 
@@ -163,4 +163,4 @@ Only download videos you own, licensed media, or content you have explicit permi
 
 ## License
 
-[MIT](LICENSE)
+[Creative Commons Attribution-NoDerivatives 4.0 International](LICENSE)
