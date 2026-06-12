@@ -148,8 +148,8 @@ npm run update:self
 Create and push a tag:
 
 ```bash
-git tag v2.1.3
-git push origin v2.1.3
+git tag v2.1.4
+git push origin v2.1.4
 ```
 
 GitHub Actions builds and publishes:
@@ -318,8 +318,8 @@ npm run update:self
 Tag oluşturup pushla:
 
 ```bash
-git tag v2.1.3
-git push origin v2.1.3
+git tag v2.1.4
+git push origin v2.1.4
 ```
 
 GitHub Actions şunları build edip yayınlar:
