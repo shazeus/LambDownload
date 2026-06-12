@@ -173,11 +173,33 @@ function pythonRuntime(): { command: string; args: string[] } {
     }
   }
 
-  if (process.platform === 'win32') {
-    return { command: 'py', args: ['-3'] }
+  const candidates =
+    process.platform === 'win32'
+      ? [
+          { command: 'py', args: ['-3'] },
+          { command: 'python', args: [] },
+          { command: 'python3', args: [] },
+        ]
+      : [
+          { command: 'python3', args: [] },
+          { command: 'python', args: [] },
+        ]
+
+  for (const candidate of candidates) {
+    try {
+      const child = spawn(candidate.command, [...candidate.args, '--version'], {
+        stdio: 'ignore',
+      })
+      if (child.pid) {
+        child.kill()
+        return candidate
+      }
+    } catch {
+      // Continue to next candidate
+    }
   }
 
-  return { command: 'python3', args: [] }
+  return candidates[0]
 }
 
 function compactWorkerError(stderr: string, fallback: string): string {
@@ -346,6 +368,10 @@ app.post('/api/update/apply', (_request, response) => {
     cwd: projectRoot,
     detached: true,
     stdio: 'ignore',
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+    },
   })
   child.unref()
 
