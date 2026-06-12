@@ -122,6 +122,7 @@ def search(query: str) -> None:
         "noplaylist": True,
         "cachedir": False,
         "http_headers": HTTP_HEADERS,
+        "js_runtime": "ejs",
     }
 
     location = ffmpeg_location()
@@ -158,16 +159,17 @@ def format_attempts(quality: str) -> list[tuple[str, str]]:
     if quality == "4k":
         return [
             (
-                "4K H.264/AAC stream pair",
-                "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-                "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/"
-                "best[height<=2160]/best",
+                "4K highest quality stream pair",
+                "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best",
             ),
             (
-                "stable 1080p H.264/AAC stream pair",
-                "bestvideo[height<=1080][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-                "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
-                "best[height<=1080]/best",
+                "4K H.264/AAC stream pair",
+                "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+                "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]",
+            ),
+            (
+                "stable 1080p highest quality stream pair",
+                "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
             ),
             ("progressive MP4 fallback", "best[height<=2160][ext=mp4]/best[ext=mp4]/best"),
         ]
@@ -202,7 +204,7 @@ def stage_from_status(status: dict[str, Any], quality: str) -> str:
     filename = str(status.get("filename") or "").lower()
     if status.get("status") == "finished":
         return "muxing" if quality != "audio" else "ready"
-    if "audio" in filename or filename.endswith((".m4a", ".webm", ".opus")):
+    if "audio" in filename or filename.endswith((".m4a", ".webm", ".opus", ".f140", ".f251")):
         return "audio"
     return "video"
 
@@ -361,6 +363,7 @@ def download_to_temp(
         "outtmpl": str(temp_dir / "%(title).80s-%(id)s.%(ext)s"),
         "progress_hooks": [hook],
         "merge_output_format": "mp4",
+        "js_runtime": "ejs",
     }
 
     if location:
