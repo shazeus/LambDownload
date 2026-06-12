@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { mkdir, rm } from 'node:fs/promises'
+import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,7 +12,6 @@ const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 const runtimeRoot = path.join(projectRoot, 'vendor', 'python-runtime')
 const workerPath = path.join(projectRoot, 'scripts', 'python_downloader.py')
-const smokeUrl = process.env.LAMBDOWNLOAD_SMOKE_URL ?? 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
 
 function bundledPython() {
   const candidates =
@@ -81,6 +81,36 @@ function parseLastJsonLine(text) {
   return null
 }
 
+function startFixtureServer(filePath) {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((request, response) => {
+      if (request.url !== '/fixture.mp4') {
+        response.writeHead(404)
+        response.end()
+        return
+      }
+
+      response.writeHead(200, {
+        'Content-Type': 'video/mp4',
+      })
+      response.end(readFileSync(filePath))
+    })
+
+    server.on('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address()
+      if (!address || typeof address !== 'object') {
+        reject(new Error('Could not bind smoke fixture server'))
+        return
+      }
+      resolve({
+        url: `http://127.0.0.1:${address.port}/fixture.mp4`,
+        close: () => new Promise((closeResolve) => server.close(closeResolve)),
+      })
+    })
+  })
+}
+
 const python = bundledPython()
 if (!python) {
   throw new Error('Bundled Python runtime is missing. Run npm run prepare:python-vendor first.')
@@ -96,7 +126,32 @@ const outdir = path.join(os.tmpdir(), `lambdownload-smoke-${Date.now()}`)
 await rm(outdir, { recursive: true, force: true })
 await mkdir(outdir, { recursive: true })
 
+const fixturePath = path.join(outdir, 'fixture-source.mp4')
+await run(selfTestPayload.ffmpeg, [
+  '-y',
+  '-f',
+  'lavfi',
+  '-i',
+  'testsrc=size=320x180:rate=24:duration=2',
+  '-f',
+  'lavfi',
+  '-i',
+  'sine=frequency=880:duration=2',
+  '-c:v',
+  'libx264',
+  '-pix_fmt',
+  'yuv420p',
+  '-c:a',
+  'aac',
+  '-movflags',
+  '+faststart',
+  fixturePath,
+])
+
+const fixtureServer = await startFixtureServer(fixturePath)
+
 try {
+  const smokeUrl = process.env.LAMBDOWNLOAD_SMOKE_URL ?? fixtureServer.url
   const download = await run(python, [workerPath, 'download', smokeUrl, '--quality', 'proxy', '--outdir', outdir])
   const payload = parseLastJsonLine(download.stdout)
   const outputPath = payload?.outputPath
@@ -108,5 +163,6 @@ try {
   await run(selfTestPayload.ffmpeg, ['-v', 'error', '-i', outputPath, '-f', 'null', '-'])
   console.log(`Smoke download ok: ${outputPath}`)
 } finally {
+  await fixtureServer.close()
   await rm(outdir, { recursive: true, force: true })
 }
