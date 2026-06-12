@@ -87,6 +87,9 @@ jobs:
       - name: Verify Python worker
         run: npm run verify:python-worker
 
+      - name: Smoke test Python download
+        run: npm run smoke:python-download
+
       - name: Build desktop installer
         run: npm run desktop:pack
 

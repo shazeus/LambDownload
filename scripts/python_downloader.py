@@ -15,6 +15,11 @@ from typing import Any
 
 
 sys.dont_write_bytecode = True
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 VENDOR_PYTHON = PROJECT_ROOT / "vendor" / "python"
 if VENDOR_PYTHON.exists():
@@ -115,6 +120,8 @@ def search(query: str) -> None:
         "skip_download": True,
         "extract_flat": False,
         "noplaylist": True,
+        "cachedir": False,
+        "http_headers": HTTP_HEADERS,
     }
 
     location = ffmpeg_location()
@@ -272,7 +279,15 @@ def transcode_editor_mp4(source: Path, destination: Path, quality: str, ffmpeg: 
         "+faststart",
         str(destination),
     ]
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False)
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
     if result.returncode != 0:
         detail = result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "ffmpeg failed"
         raise RuntimeError(f"Could not create editor-safe MP4: {detail}")
@@ -393,7 +408,8 @@ def download(url: str, quality: str, outdir: str) -> None:
         info: dict[str, Any] | None = None
         source: Path | None = None
 
-        for attempt_index, (attempt_label, format_expression) in enumerate(format_attempts(quality), start=1):
+        attempts = format_attempts(quality)
+        for attempt_index, (attempt_label, format_expression) in enumerate(attempts, start=1):
             attempt_dir = temp_dir / f"attempt-{attempt_index}"
             attempt_dir.mkdir(parents=True, exist_ok=True)
             try:
@@ -409,7 +425,7 @@ def download(url: str, quality: str, outdir: str) -> None:
                 break
             except Exception as error:
                 failures.append(f"{attempt_label}: {clean_error_message(error)}")
-                if attempt_index < len(format_attempts(quality)):
+                if attempt_index < len(attempts):
                     emit(
                         {
                             "type": "progress",

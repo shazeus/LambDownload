@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
+import { mkdir, rm } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const projectRoot = path.resolve(__dirname, '..')
+const runtimeRoot = path.join(projectRoot, 'vendor', 'python-runtime')
+const workerPath = path.join(projectRoot, 'scripts', 'python_downloader.py')
+const smokeUrl = process.env.LAMBDOWNLOAD_SMOKE_URL ?? 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
+
+function bundledPython() {
+  const candidates =
+    process.platform === 'win32'
+      ? [
+          path.join(runtimeRoot, 'python', 'install', 'python.exe'),
+          path.join(runtimeRoot, 'install', 'python.exe'),
+          path.join(runtimeRoot, 'python', 'python.exe'),
+          path.join(runtimeRoot, 'python.exe'),
+        ]
+      : [
+          path.join(runtimeRoot, 'python', 'install', 'bin', 'python3'),
+          path.join(runtimeRoot, 'python', 'install', 'bin', 'python3.13'),
+          path.join(runtimeRoot, 'install', 'bin', 'python3'),
+          path.join(runtimeRoot, 'install', 'bin', 'python3.13'),
+          path.join(runtimeRoot, 'python', 'bin', 'python3'),
+          path.join(runtimeRoot, 'python', 'bin', 'python3.13'),
+        ]
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? ''
+}
+
+function run(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd ?? projectRoot,
+      env: {
+        ...process.env,
+        PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONIOENCODING: 'utf-8',
+        PYTHONNOUSERSITE: '1',
+        PYTHONUNBUFFERED: '1',
+        ...(options.env ?? {}),
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+
+    let stdout = ''
+    let stderr = ''
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+    child.on('error', reject)
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve({ stdout, stderr })
+        return
+      }
+
+      reject(new Error(stderr.trim() || stdout.trim() || `${command} ${args.join(' ')} exited with ${code}`))
+    })
+  })
+}
+
+function parseLastJsonLine(text) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  for (const line of lines.reverse()) {
+    try {
+      return JSON.parse(line)
+    } catch {
+      // Ignore progress text that is not JSON.
+    }
+  }
+  return null
+}
+
+const python = bundledPython()
+if (!python) {
+  throw new Error('Bundled Python runtime is missing. Run npm run prepare:python-vendor first.')
+}
+
+const selfTest = await run(python, [workerPath, 'self-test'])
+const selfTestPayload = parseLastJsonLine(selfTest.stdout)
+if (!selfTestPayload?.ffmpeg) {
+  throw new Error(`Python worker self-test did not return ffmpeg: ${selfTest.stdout}`)
+}
+
+const outdir = path.join(os.tmpdir(), `lambdownload-smoke-${Date.now()}`)
+await rm(outdir, { recursive: true, force: true })
+await mkdir(outdir, { recursive: true })
+
+try {
+  const download = await run(python, [workerPath, 'download', smokeUrl, '--quality', 'proxy', '--outdir', outdir])
+  const payload = parseLastJsonLine(download.stdout)
+  const outputPath = payload?.outputPath
+
+  if (!outputPath || !existsSync(outputPath)) {
+    throw new Error(`Smoke download did not produce an output path: ${download.stdout}`)
+  }
+
+  await run(selfTestPayload.ffmpeg, ['-v', 'error', '-i', outputPath, '-f', 'null', '-'])
+  console.log(`Smoke download ok: ${outputPath}`)
+} finally {
+  await rm(outdir, { recursive: true, force: true })
+}

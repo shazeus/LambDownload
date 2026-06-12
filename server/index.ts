@@ -210,6 +210,7 @@ function runWorker(args: string[]): Promise<string> {
       env: {
         ...process.env,
         PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONIOENCODING: 'utf-8',
         PYTHONNOUSERSITE: '1',
         PYTHONUNBUFFERED: '1',
       },
@@ -236,10 +237,19 @@ function runWorker(args: string[]): Promise<string> {
 }
 
 app.get('/api/health', (_request, response) => {
+  const python = pythonRuntime()
   response.json({
     ok: true,
+    version: currentVersion(),
     provider: 'python-yt-dlp',
+    platform: process.platform,
+    appRoot: projectRoot,
     downloadRoot,
+    python: {
+      command: python.command,
+      args: python.args,
+      bundled: Boolean(bundledPython()),
+    },
   })
 })
 
@@ -401,6 +411,7 @@ app.post('/api/jobs', (request, response) => {
       env: {
         ...process.env,
         PYTHONDONTWRITEBYTECODE: '1',
+        PYTHONIOENCODING: 'utf-8',
         PYTHONNOUSERSITE: '1',
         PYTHONUNBUFFERED: '1',
       },

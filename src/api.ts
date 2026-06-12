@@ -11,9 +11,17 @@ import type {
 
 type ApiResponse = Pick<Response, 'json' | 'ok' | 'status' | 'text'>
 
-const LOCAL_API_BASES = import.meta.env.VITE_LAMBDOWNLOAD_API
-  ? [import.meta.env.VITE_LAMBDOWNLOAD_API]
-  : ['http://127.0.0.1:4317/api', 'http://localhost:4317/api']
+function localApiBases(): string[] {
+  if (window.lambdownload?.apiBase) {
+    return [window.lambdownload.apiBase]
+  }
+
+  if (import.meta.env.VITE_LAMBDOWNLOAD_API) {
+    return [import.meta.env.VITE_LAMBDOWNLOAD_API]
+  }
+
+  return ['http://127.0.0.1:4317/api', 'http://localhost:4317/api']
+}
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
@@ -23,7 +31,7 @@ async function apiFetch(path: string, init?: RequestInit): Promise<ApiResponse> 
   const failures: string[] = []
 
   for (let attempt = 0; attempt < 16; attempt += 1) {
-    for (const base of LOCAL_API_BASES) {
+    for (const base of localApiBases()) {
       try {
         return await fetch(`${base}${path}`, init)
       } catch (error) {
