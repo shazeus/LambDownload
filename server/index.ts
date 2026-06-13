@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express from 'express'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
@@ -187,11 +187,10 @@ function pythonRuntime(): { command: string; args: string[] } {
 
   for (const candidate of candidates) {
     try {
-      const child = spawn(candidate.command, [...candidate.args, '--version'], {
+      const result = spawnSync(candidate.command, [...candidate.args, '--version'], {
         stdio: 'ignore',
       })
-      if (child.pid) {
-        child.kill()
+      if (result.status === 0) {
         return candidate
       }
     } catch {
