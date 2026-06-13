@@ -18,6 +18,9 @@ function bundledPython() {
           path.join(runtimeRoot, 'install', 'python.exe'),
           path.join(runtimeRoot, 'python', 'python.exe'),
           path.join(runtimeRoot, 'python.exe'),
+          'py',
+          'python',
+          'python3',
         ]
       : [
           path.join(runtimeRoot, 'python', 'install', 'bin', 'python3'),
@@ -26,9 +29,11 @@ function bundledPython() {
           path.join(runtimeRoot, 'install', 'bin', 'python3.13'),
           path.join(runtimeRoot, 'python', 'bin', 'python3'),
           path.join(runtimeRoot, 'python', 'bin', 'python3.13'),
+          'python3',
+          'python',
         ]
 
-  return candidates.find((candidate) => existsSync(candidate)) ?? ''
+  return candidates.find((candidate) => (candidate.includes(path.sep) ? existsSync(candidate) : true)) ?? ''
 }
 
 function run(command, args) {

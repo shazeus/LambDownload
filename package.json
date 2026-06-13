@@ -5,7 +5,7 @@
   "type": "module",
   "main": "electron/main.cjs",
   "description": "Standalone desktop downloader for editor-ready media with drag-out workflow.",
-  "author": "shazeus",
+  "author": "shazeus <shazeus@github.com>",
   "license": "CC-BY-ND-4.0",
   "scripts": {
     "dev": "vite",
@@ -94,6 +94,14 @@
         "portable"
       ],
       "icon": "build/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "snap",
+        "deb"
+      ],
+      "category": "Video"
     },
     "nsis": {
       "oneClick": false,

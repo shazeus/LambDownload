@@ -94,8 +94,12 @@ def normalize_video(entry: dict[str, Any]) -> dict[str, Any]:
     thumbnail = ""
     if thumbnails:
         thumbnail = thumbnails[-1].get("url") or ""
-    if not thumbnail and video_id != "unknown":
+    if not thumbnail and video_id != "unknown" and "youtube" in url:
         thumbnail = f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
+
+    extractor = str(entry.get("extractor") or "").lower()
+    is_audio_only = "soundcloud" in extractor or entry.get("vcodec") == "none"
+    qualities = [q for q in QUALITIES if q["id"] == "audio"] if is_audio_only else QUALITIES
 
     return {
         "id": str(video_id),
@@ -105,7 +109,7 @@ def normalize_video(entry: dict[str, Any]) -> dict[str, Any]:
         "thumbnail": thumbnail,
         "url": url,
         "rightsNote": "Confirm ownership, license, or explicit reuse permission before downloading.",
-        "qualities": QUALITIES,
+        "qualities": qualities,
     }
 
 
@@ -158,16 +162,17 @@ def format_attempts(quality: str) -> list[tuple[str, str]]:
     if quality == "4k":
         return [
             (
-                "4K H.264/AAC stream pair",
-                "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-                "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]/"
-                "best[height<=2160]/best",
+                "4K highest quality stream pair",
+                "bestvideo[height<=2160]+bestaudio/best[height<=2160]/best",
             ),
             (
-                "stable 1080p H.264/AAC stream pair",
-                "bestvideo[height<=1080][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
-                "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/"
-                "best[height<=1080]/best",
+                "4K H.264/AAC stream pair",
+                "bestvideo[height<=2160][vcodec^=avc1][ext=mp4]+bestaudio[acodec^=mp4a][ext=m4a]/"
+                "bestvideo[height<=2160][ext=mp4]+bestaudio[ext=m4a]",
+            ),
+            (
+                "stable 1080p highest quality stream pair",
+                "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
             ),
             ("progressive MP4 fallback", "best[height<=2160][ext=mp4]/best[ext=mp4]/best"),
         ]
@@ -202,9 +207,12 @@ def stage_from_status(status: dict[str, Any], quality: str) -> str:
     filename = str(status.get("filename") or "").lower()
     if status.get("status") == "finished":
         return "muxing" if quality != "audio" else "ready"
-    if "audio" in filename or filename.endswith((".m4a", ".webm", ".opus")):
-        return "audio"
-    return "video"
+
+    # Some audio formats or explicitly requested audio quality
+    is_audio = "audio" in filename or quality == "audio" or filename.endswith(
+        (".m4a", ".webm", ".opus", ".f140", ".f251", ".mp3", ".ogg", ".wav", ".flac")
+    )
+    return "audio" if is_audio else "video"
 
 
 def newest_output(outdir: Path, video_id: str) -> str | None:

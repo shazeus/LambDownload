@@ -63,6 +63,8 @@ jobs:
             artifact: macos
           - os: windows-latest
             artifact: windows
+          - os: ubuntu-latest
+            artifact: linux
 
     runs-on: ${{ matrix.os }}
 
@@ -103,4 +105,7 @@ jobs:
             dist-desktop/*.dmg
             dist-desktop/*.zip
             dist-desktop/*.exe
+            dist-desktop/*.AppImage
+            dist-desktop/*.snap
+            dist-desktop/*.deb
           generate_release_notes: true

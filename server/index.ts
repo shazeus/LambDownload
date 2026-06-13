@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express from 'express'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import path from 'node:path'
@@ -173,11 +173,32 @@ function pythonRuntime(): { command: string; args: string[] } {
     }
   }
 
-  if (process.platform === 'win32') {
-    return { command: 'py', args: ['-3'] }
+  const candidates =
+    process.platform === 'win32'
+      ? [
+          { command: 'py', args: ['-3'] },
+          { command: 'python', args: [] },
+          { command: 'python3', args: [] },
+        ]
+      : [
+          { command: 'python3', args: [] },
+          { command: 'python', args: [] },
+        ]
+
+  for (const candidate of candidates) {
+    try {
+      const result = spawnSync(candidate.command, [...candidate.args, '--version'], {
+        stdio: 'ignore',
+      })
+      if (result.status === 0) {
+        return candidate
+      }
+    } catch {
+      // Continue to next candidate
+    }
   }
 
-  return { command: 'python3', args: [] }
+  return candidates[0]
 }
 
 function compactWorkerError(stderr: string, fallback: string): string {
@@ -346,6 +367,10 @@ app.post('/api/update/apply', (_request, response) => {
     cwd: projectRoot,
     detached: true,
     stdio: 'ignore',
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: '1',
+    },
   })
   child.unref()
 
