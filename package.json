@@ -1,7 +1,7 @@
 {
   "name": "lambdownload",
   "private": false,
-  "version": "2.1.5",
+  "version": "2.1.6",
   "type": "module",
   "main": "electron/main.cjs",
   "description": "Standalone desktop downloader for editor-ready media with drag-out workflow.",
