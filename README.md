@@ -148,8 +148,8 @@ npm run update:self
 Create and push a tag:
 
 ```bash
-git tag v2.1.5
-git push origin v2.1.5
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 GitHub Actions builds and publishes:
